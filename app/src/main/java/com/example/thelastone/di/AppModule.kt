@@ -17,6 +17,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
+import com.example.thelastone.data.remote.ChatService  // 🆕 添加這個 import
 
 
 
@@ -25,7 +26,7 @@ import javax.inject.Singleton
 object AppModule {
 
     // 改成你的後端 API 網址
-    private const val BASE_URL = "http://192.168.0.152:5000" // Android 模擬器用
+    private const val BASE_URL = "http://192.168.1.213:5000" // Android 模擬器用
     // 實體裝置改成: "http://你的電腦IP:3000/"
 
     /**
@@ -87,5 +88,11 @@ object AppModule {
     @Singleton
     fun provideAuthApiService(retrofit: Retrofit): AuthApiService {
         return retrofit.create(AuthApiService::class.java)
+    }
+    // 🆕 添加這個方法
+    @Provides
+    @Singleton
+    fun provideChatService(retrofit: Retrofit): ChatService {
+        return retrofit.create(ChatService::class.java)
     }
 }

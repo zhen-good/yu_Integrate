@@ -85,6 +85,8 @@ dependencies {
     kapt("com.google.dagger:hilt-android-compiler:2.51")
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
     implementation("io.coil-kt:coil-compose:2.7.0")
+    implementation("com.google.dagger:hilt-android:2.48")
+    kapt("com.google.dagger:hilt-compiler:2.48")
 
     // Maps / Places / Location
     implementation("com.google.android.gms:play-services-maps:18.2.0")
@@ -107,6 +109,13 @@ dependencies {
 
     // Gson (用來序列化 AuthUser)
     implementation("com.google.code.gson:gson:2.10.1")
+
+    //websocket
+    // Socket.IO
+    implementation("io.socket:socket.io-client:2.1.0")
+
+    // Coroutines
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 
     // 其餘
     implementation(libs.androidx.core.ktx)

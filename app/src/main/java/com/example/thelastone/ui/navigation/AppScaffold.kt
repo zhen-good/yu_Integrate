@@ -166,7 +166,7 @@ private fun MainNavHost(
 ) {
     NavHost(
         navController = nav,
-        startDestination = Root.Explore.route  // ← 改回這個! // ← 改成這個
+        startDestination = "trip_chat/trip1234" // ← 改回這個! // ← 改成這個
     ) {
 
         // ===== 頂層分頁 =====
@@ -307,6 +307,22 @@ private fun MainNavHost(
             arguments = listOf(navArgument("tripId") { type = NavType.StringType })
         ) {
             TripChatScreen(padding = padding)
+        }
+
+        // 🆕 聊天室路由 - 添加這個！
+        composable(
+            route = "trip_chat/{tripId}",
+            arguments = listOf(
+                navArgument("tripId") {
+                    type = NavType.StringType
+                }
+            )
+        ) { backStackEntry ->
+            val tripId = backStackEntry.arguments?.getString("tripId") ?: ""
+            TripChatScreen(
+                padding = padding,
+                viewModel = hiltViewModel()
+            )
         }
 
         // ===== 其他 =====
