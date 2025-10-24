@@ -16,7 +16,12 @@ interface ChatRepository {
 
     // 原有的方法 (保留你的業務邏輯)
     fun observeMessages(tripId: String): Flow<List<Message>>
-    suspend fun refresh(tripId: String)
-    suspend fun send(tripId: String, content: String)
+
+//    歷史資料：之後再實作
+//    suspend fun refresh(tripId: String)
+
     suspend fun analyze(tripId: String)
+
+    // ✅ 新增這個方法
+    fun sendMessage(userId: String, tripId: String, message: String)
 }

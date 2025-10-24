@@ -26,9 +26,11 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import org.json.JSONObject
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
+import io.socket.client.Socket
 
 @Singleton  // ← 確保有這個
 class ChatRepositoryImpl @Inject constructor(  // ← 確保有這個
@@ -36,7 +38,8 @@ class ChatRepositoryImpl @Inject constructor(  // ← 確保有這個
     private val dao: MessageDao,
     private val json: Json,
     private val session: SessionManager,
-    private val webSocketService: ChatWebSocketService
+    private val webSocketService: ChatWebSocketService,
+
 ) : ChatRepository {
 
     companion object {
@@ -69,15 +72,15 @@ class ChatRepositoryImpl @Inject constructor(  // ← 確保有這個
                     }
                     is SocketEvent.NewMessage -> {
                         Log.d(TAG, "💬 收到新訊息: ${event.message.content}")
-                        currentTripId?.let { tripId ->
-                            saveWebSocketMessageToDatabase(tripId, event.message)
-                        }
+//                        currentTripId?.let { tripId ->
+//                            saveWebSocketMessageToDatabase(tripId, event.message)
+//                        }
                     }
                     is SocketEvent.SystemMessage -> {
                         Log.d(TAG, "📢 收到系統訊息: ${event.message}")
-                        currentTripId?.let { tripId ->
-                            saveSystemMessageToDatabase(tripId, event.message)
-                        }
+//                        currentTripId?.let { tripId ->
+//                            saveSystemMessageToDatabase(tripId, event.message)
+//                        }
                     }
                     else -> {}
                 }
@@ -89,48 +92,7 @@ class ChatRepositoryImpl @Inject constructor(  // ← 確保有這個
         return webSocketService.connect()
     }
 
-    private suspend fun saveWebSocketMessageToDatabase(
-        tripId: String,
-        chatMessage: com.example.thelastone.data.remote.ChatMessage
-    ) {
-        try {
-            val entity = MessageEntity(
-                id = chatMessage.id,
-                tripId = tripId,
-                senderId = chatMessage.userId,
-                senderName = chatMessage.username,
-                text = chatMessage.content,
-                timestamp = chatMessage.timestamp,
-                isAi = false,
-                status = SendStatus.SENT,
-                suggestionsJson = null
-            )
-            dao.upsert(entity)
-            Log.d(TAG, "✅ WebSocket 訊息已儲存")
-        } catch (e: Exception) {
-            Log.e(TAG, "❌ 儲存失敗", e)
-        }
-    }
 
-    private suspend fun saveSystemMessageToDatabase(tripId: String, text: String) {
-        try {
-            val entity = MessageEntity(
-                id = "system-${UUID.randomUUID()}",
-                tripId = tripId,
-                senderId = "system",
-                senderName = "系統",
-                text = text,
-                timestamp = System.currentTimeMillis(),
-                isAi = true,
-                status = SendStatus.SENT,
-                suggestionsJson = null
-            )
-            dao.upsert(entity)
-            Log.d(TAG, "✅ 系統訊息已儲存")
-        } catch (e: Exception) {
-            Log.e(TAG, "❌ 儲存失敗", e)
-        }
-    }
 
     override fun joinRoom(tripId: String, username: String, userId: String) {
         Log.d(TAG, "===== joinRoom =====")
@@ -161,59 +123,47 @@ class ChatRepositoryImpl @Inject constructor(  // ← 確保有這個
     override fun observeMessages(tripId: String): Flow<List<Message>> =
         dao.observeByTrip(tripId).map { list -> list.map { it.toModel(json) } }
 
-    override suspend fun refresh(tripId: String) {
-        Log.d(TAG, "===== refresh =====")
 
-        // 載入 HTTP 歷史
-        try {
-            val remote = service.getHistory(tripId)
-            val entities = remote.map { dto ->
-                MessageEntity(
-                    id = dto.id,
-                    tripId = dto.tripId,
-                    senderId = dto.senderId,
-                    senderName = dto.senderName,
-                    text = dto.text,
-                    timestamp = dto.timestamp,
-                    isAi = dto.isAi,
-                    status = SendStatus.SENT,
-                    suggestionsJson = dto.suggestions?.let { json.encodeToString(it) }
-                )
-            }
-            dao.deleteByTrip(tripId)
-            dao.upsertAll(entities)
-        } catch (e: Exception) {
-            Log.e(TAG, "❌ 載入歷史失敗", e)
-        }
+    //歷史資料(後端還沒實作)
+//    override suspend fun refresh(tripId: String) {
+//        Log.d(TAG, "===== refresh =====")
+//
+//        // 載入 HTTP 歷史
+//        try {
+//            val remote = service.getHistory(tripId)
+//            val entities = remote.map { dto ->
+//                MessageEntity(
+//                    id = dto.id,
+//                    tripId = dto.tripId,
+//                    senderId = dto.senderId,
+//                    senderName = dto.senderName,
+//                    text = dto.text,
+//                    timestamp = dto.timestamp,
+//                    isAi = dto.isAi,
+//                    status = SendStatus.SENT,
+//                    suggestionsJson = dto.suggestions?.let { json.encodeToString(it) }
+//                )
+//            }
+//            dao.deleteByTrip(tripId)
+//            dao.upsertAll(entities)
+//        } catch (e: Exception) {
+//            Log.e(TAG, "❌ 載入歷史失敗", e)
+//        }
 
-        // 加入 WebSocket 房間
-        val user = session.auth.value?.user
-        val username = user?.name ?: "Guest"
-        val userId = user?.id ?: "guest"
-        joinRoom(tripId, username, userId)
-    }
+//        // 加入 WebSocket 房間
+//        val user = session.auth.value?.user
+//        val username = user?.name ?: "Guest"
+//        val userId = user?.id ?: "guest"
+//        joinRoom(tripId, username, userId)
+//    }
 
-    override suspend fun send(tripId: String, text: String) {
-        val me = session.auth.value?.user ?: error("Require login")
-        val localId = "local-${UUID.randomUUID()}"
+    // ✅ 改用 webSocketService 發送
+    override fun sendMessage(userId: String, tripId: String, message: String) {
+        Log.d(TAG, "📤 準備發送訊息: $message")
+        Log.d(TAG, "  userId: $userId")
+        Log.d(TAG, "  tripId: $tripId")
 
-        val localEntity = Message(
-            id = localId,
-            tripId = tripId,
-            sender = me,
-            text = text,
-            timestamp = System.currentTimeMillis(),
-            isAi = false
-        ).toEntity(json, SendStatus.SENDING)
-        dao.upsert(localEntity)
-
-        try {
-            val dto = service.sendMessage(tripId, SendMessageBody(text))
-            dao.promoteLocalToServer(localId, dto.id, SendStatus.SENT)
-        } catch (e: Exception) {
-            dao.updateStatus(localId, SendStatus.FAILED)
-            throw e
-        }
+        webSocketService.sendMessage(tripId, userId, message)
     }
 
     override suspend fun analyze(tripId: String) {

@@ -13,6 +13,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import android.util.Log
 import javax.inject.Inject
 
 sealed interface ChatUiState {
@@ -32,7 +33,7 @@ sealed interface ChatUiState {
 class TripChatViewModel @Inject constructor(
     private val chatRepo: ChatRepository,
     tripRepo: TripRepository,
-    session: SessionManager,
+    private val session: SessionManager, // ✅ 加 private
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -45,7 +46,6 @@ class TripChatViewModel @Inject constructor(
     private val myIdFlow: Flow<String> =
         session.auth.map { it?.user?.id ?: "guest" }
 
-    // 🔧 暫時不載入 Trip，只專注在聊天功能
     private val tripFlow: Flow<Trip?> = flowOf(null)
 
     private val messagesFlow: Flow<List<Message>> =
@@ -87,24 +87,43 @@ class TripChatViewModel @Inject constructor(
             initialValue = ChatUiState.Loading
         )
 
-    init {
-        viewModelScope.launch {
-            chatRepo.refresh(tripId)
-        }
-    }
+//    init {
+//        viewModelScope.launch {
+//            chatRepo.refresh(tripId)
+//        }
+//    }
 
     fun updateInput(v: String) {
         _input.value = v
     }
 
+    // ✅ 修正 send() 方法
     fun send() = viewModelScope.launch {
         val txt = _input.value.trim()
         if (txt.isEmpty()) return@launch
+
         _input.value = ""
+
         try {
-            chatRepo.send(tripId, txt)
+            // 取得當前使用者 ID
+            val userId = session.auth.first()?.user?.id
+
+            if (userId.isNullOrEmpty()) {
+                Log.e("ChatVM", "❌ 使用者未登入")
+                return@launch
+            }
+
+            // ✅ 使用新的 sendMessage 方法
+            chatRepo.sendMessage(
+                userId = userId,
+                tripId = tripId,
+                message = txt
+            )
+
+            Log.d("ChatVM", "✅ 訊息已發送: $txt")
+
         } catch (e: Exception) {
-            // 錯誤處理
+            Log.e("ChatVM", "❌ 發送失敗: ${e.message}", e)
         }
     }
 
@@ -127,6 +146,16 @@ class TripChatViewModel @Inject constructor(
     }
 
     fun onSelectSuggestion(place: PlaceLite) = viewModelScope.launch {
-        chatRepo.send(tripId, "選擇：${place.name}")
+        val userId = session.auth.first()?.user?.id
+        if (userId.isNullOrEmpty()) {
+            Log.e("ChatVM", "❌ 使用者未登入")
+            return@launch
+        }
+
+        chatRepo.sendMessage(
+            userId = userId,
+            tripId = tripId,
+            message = "選擇：${place.name}"
+        )
     }
 }

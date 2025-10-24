@@ -11,8 +11,8 @@ interface ChatService {
     @GET("trips/{tripId}/messages")
     suspend fun getHistory(@Path("tripId") tripId: String): List<MessageDto>
 
-    @POST("trips/{tripId}/messages")
-    suspend fun sendMessage(@Path("tripId") tripId: String, @Body body: SendMessageBody): MessageDto
+//    @POST("trips/{tripId}/messages")
+//    suspend fun sendMessage(@Path("tripId") tripId: String, @Body body: SendMessageBody): MessageDto
 
     @POST("trips/{tripId}/analyze")
     suspend fun analyze(@Path("tripId") tripId: String, @Body body: AnalyzeBody): AnalyzeResponse

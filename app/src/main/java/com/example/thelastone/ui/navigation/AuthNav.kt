@@ -17,6 +17,7 @@ fun AuthNavHost(nav: NavHostController) {
     NavHost(
         navController = nav,
         startDestination = AuthRoutes.Register  // ← 改成先到註冊頁
+
     ) {
         composable(AuthRoutes.Login) {
             LoginScreen(
