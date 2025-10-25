@@ -9,4 +9,8 @@ sealed class SocketEvent {
     data class UserLeft(val username: String, val message: String) : SocketEvent()
     data class UserTyping(val username: String, val isTyping: Boolean) : SocketEvent()
     data class Error(val message: String) : SocketEvent()
+
+    // ✅ 加這兩條（帶參數的 data class，而不是 object）
+    data class AiQuestionV2(val rawJson: String) : SocketEvent()
+    data class AiQuestionLegacy(val rawJson: String) : SocketEvent()
 }

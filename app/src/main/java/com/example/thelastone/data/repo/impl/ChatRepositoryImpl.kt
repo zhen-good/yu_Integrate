@@ -4,8 +4,12 @@ import android.util.Log
 import com.example.thelastone.data.local.MessageDao
 import com.example.thelastone.data.local.MessageEntity
 import com.example.thelastone.data.local.SendStatus
+import com.example.thelastone.data.mapper.QuestionMapper
+import com.example.thelastone.data.model.LegacyQuestionDto
 import com.example.thelastone.data.model.Message
 import com.example.thelastone.data.model.PlaceLite
+import com.example.thelastone.data.model.QuestionV2Dto
+import com.example.thelastone.data.model.SingleChoiceQuestion
 import com.example.thelastone.data.model.User
 import com.example.thelastone.data.remote.AnalyzeBody
 import com.example.thelastone.data.remote.ChatService
@@ -19,6 +23,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.util.UUID
@@ -89,53 +94,78 @@ class ChatRepositoryImpl @Inject constructor(
                         Log.d(TAG, "  from: ${event.message.username}")
 
                         currentTripId?.let { tripId ->
-                            val message = Message(
+                            val msg = Message(
                                 id = event.message.id,
                                 tripId = tripId,
                                 sender = User(
                                     id = event.message.userId,
                                     name = event.message.username,
-                                    email = "",  // ✅ WebSocket 訊息沒有 email，用空字串
+                                    email = "",
                                     avatarUrl = null,
                                     friends = emptyList()
                                 ),
                                 text = event.message.content,
                                 timestamp = event.message.timestamp,
                                 isAi = false,
-                                suggestions = null
+                                suggestions = null,
+                                isQuestion = false,
+                                question = null
                             )
-                        val currentMessages = _realtimeMessages.value.toMutableList()
-                        currentMessages.add(message)
-                        _realtimeMessages.value = currentMessages
-
-                        Log.d(TAG, "✅ 訊息已加入列表，總數: ${currentMessages.size}")
+                            val list = _realtimeMessages.value.toMutableList()
+                            list.add(msg)
+                            _realtimeMessages.value = list
+                            Log.d(TAG, "✅ 訊息已加入列表，總數: ${list.size}")
                         }
                     }
 
                     is SocketEvent.SystemMessage -> {
                         Log.d(TAG, "📢 收到系統訊息: ${event.message}")
 
-                        val systemMessage = Message(
-                            id = System.currentTimeMillis().toString(),
-                            tripId = currentTripId ?: "",
-                            sender = User(                    // ← 直接創建 User
-                                id = "system",
-                                name = "系統",
-                                email = "",
-                                avatarUrl = null,
-                                friends = emptyList()
-                            ),
-                            text = event.message,  // ← String 賦值給 text: String
-                            timestamp = System.currentTimeMillis(),
-                            isAi = true,
-                            suggestions = null
-                        )
+                        // 試著把字串解析成題目（V2 -> Legacy）
+                        val parsedQuestion: SingleChoiceQuestion? =
+                            runCatching {
+                                json.decodeFromString<QuestionV2Dto>(event.message)
+                                    .let { QuestionMapper.fromV2(it) }
+                            }.getOrElse {
+                                runCatching {
+                                    json.decodeFromString<LegacyQuestionDto>(event.message)
+                                        .let { QuestionMapper.fromLegacy(it) }
+                                }.getOrNull()
+                            }
 
-                        val currentMessages = _realtimeMessages.value.toMutableList()
-                        currentMessages.add(systemMessage)
-                        _realtimeMessages.value = currentMessages
+                        val msg =
+                            if (parsedQuestion != null) {
+                                // 題卡
+                                Message(
+                                    id = System.currentTimeMillis().toString(),
+                                    tripId = currentTripId ?: "",
+                                    sender = User("system", "Trip AI", "", null, emptyList()),
+                                    text = "",
+                                    timestamp = System.currentTimeMillis(),
+                                    isAi = true,
+                                    suggestions = null,
+                                    isQuestion = true,
+                                    question = parsedQuestion
+                                )
+                            } else {
+                                // 一般系統文字
+                                Message(
+                                    id = System.currentTimeMillis().toString(),
+                                    tripId = currentTripId ?: "",
+                                    sender = User("system", "Trip AI", "", null, emptyList()),
+                                    text = event.message,
+                                    timestamp = System.currentTimeMillis(),
+                                    isAi = true,
+                                    suggestions = null,
+                                    isQuestion = false,
+                                    question = null
+                                )
+                            }
 
-                        Log.d(TAG, "✅ 系統訊息已加入，總數: ${currentMessages.size}")
+                        val list = _realtimeMessages.value.toMutableList()
+                        list.add(msg)
+                        _realtimeMessages.value = list
+                        Log.d(TAG, "✅ 系統訊息已加入，總數: ${list.size}")
                     }
 
                     else -> {

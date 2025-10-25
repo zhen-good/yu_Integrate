@@ -75,3 +75,9 @@ data class ChoiceOption(
     val value: String? = null, // 可忽略
     val key: String? = null
 )
+
+data class AiQuestionEnvelope(
+    @kotlinx.serialization.SerialName("user_id") val userId: String? = null,
+    val message: QuestionV2Dto? = null
+)
+

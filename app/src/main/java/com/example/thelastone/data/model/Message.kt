@@ -8,7 +8,10 @@ data class Message(
     val text: String,
     val timestamp: Long,           // 毫秒
     val isAi: Boolean = false,     // 系統 AI 訊息
-    val suggestions: List<PlaceLite>? = null // ← AI 訊息可帶三個建議地點
+    val suggestions: List<PlaceLite>? = null, // ← AI 訊息可帶三個建議地點
+    //看訊息是不是問題的訊息，是的話就改成用新版的問題格式
+    val isQuestion: Boolean = false,
+    val question: SingleChoiceQuestion? = null
 )
 
 data class AnalysisResult(

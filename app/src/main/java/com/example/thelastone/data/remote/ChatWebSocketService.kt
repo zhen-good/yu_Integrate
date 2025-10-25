@@ -73,6 +73,13 @@ class ChatWebSocketService @Inject constructor(
                 }
             }
 
+            socket.on("ai_question_v2") { args ->
+                val raw = args.firstOrNull()?.toString() ?: return@on
+                Log.d(TAG, "🧩 收到 ai_question_v2: $raw")
+                trySend(SocketEvent.AiQuestionV2(raw))
+            }
+
+
             // 監聽 trip 事件
             socket.on("trip") { args ->
                 try {
