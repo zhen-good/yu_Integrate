@@ -7,6 +7,8 @@ import com.example.thelastone.data.remote.SocketEvent
 import kotlinx.coroutines.flow.Flow
 
 interface ChatRepository {
+
+    suspend fun connect(tripId: String, userId: String, username: String)
     // WebSocket 方法
     fun connectToChat(): Flow<SocketEvent>
     fun joinRoom(tripId: String, username: String, userId: String)

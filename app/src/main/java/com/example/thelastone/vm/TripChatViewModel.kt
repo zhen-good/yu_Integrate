@@ -87,11 +87,33 @@ class TripChatViewModel @Inject constructor(
             initialValue = ChatUiState.Loading
         )
 
-//    init {
-//        viewModelScope.launch {
-//            chatRepo.refresh(tripId)
-//        }
-//    }
+    init {
+        Log.d("TripChatVM", "🚀 初始化 - tripId: $tripId")
+
+        // ✅ 啟動 WebSocket 連接
+        viewModelScope.launch {
+            try {
+                // 取得使用者資訊
+                val auth = session.auth.first()
+                val userId = auth?.user?.id ?: "guest"
+                val username = auth?.user?.name ?: "Guest"
+
+                Log.d("TripChatVM", "👤 使用者: $userId / $username")
+
+                // ✅ 關鍵：連接並加入房間
+                chatRepo.connect(
+                    tripId = tripId,
+                    userId = userId,
+                    username = username
+                )
+
+                Log.d("TripChatVM", "✅ WebSocket 已連接並加入房間")
+
+            } catch (e: Exception) {
+                Log.e("TripChatVM", "❌ 連接失敗", e)
+            }
+        }
+    }
 
     fun updateInput(v: String) {
         _input.value = v

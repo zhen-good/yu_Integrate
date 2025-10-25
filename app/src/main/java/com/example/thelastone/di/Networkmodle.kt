@@ -21,7 +21,7 @@ object NetworkModule {
         return if (isEmulator()) {
             "http://10.0.2.2:5000"  // 模擬器用這個
         } else {
-            "http://192.168.1.213:5000"  // 實體手機用這個(你的電腦 IP)
+            "http://172.20.10.4:5000"  // 實體手機用這個(你的電腦 IP)
         }
     }
 
