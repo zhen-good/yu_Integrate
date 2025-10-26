@@ -11,7 +11,8 @@ data class Message(
     val suggestions: List<PlaceLite>? = null, // ← AI 訊息可帶三個建議地點
     //看訊息是不是問題的訊息，是的話就改成用新版的問題格式
     val isQuestion: Boolean = false,
-    val question: SingleChoiceQuestion? = null
+    val question: SingleChoiceQuestion? = null,
+    val singleChoiceQuestion: SingleChoiceQuestion? = null,
 )
 
 data class AnalysisResult(

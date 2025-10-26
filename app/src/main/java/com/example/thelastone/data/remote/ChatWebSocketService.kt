@@ -2,12 +2,14 @@ package com.example.thelastone.data.remote
 
 import android.util.Log
 import io.socket.client.Socket
+import io.socket.emitter.Emitter
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import org.json.JSONObject
 import javax.inject.Inject
 import javax.inject.Singleton
+
 
 @Singleton
 class ChatWebSocketService @Inject constructor(
@@ -16,17 +18,45 @@ class ChatWebSocketService @Inject constructor(
     companion object {
         private const val TAG = "ChatWebSocket"
     }
+    private val commonHandler: Emitter.Listener = Emitter.Listener { args ->
+        // 這裡放處理 WebSocket 事件的實際邏輯
+        // 例如： Log.d(TAG, "Socket Event Received: ${args.joinToString()}")
+    }
 
     init {
         Log.d(TAG, "🏭 ChatWebSocketService 初始化")
         Log.d(TAG, "🏭 Socket 實例 ID: ${System.identityHashCode(socket)}")
     }
 
+
+    private fun Socket.onAny(function: Any) {}
+
     fun connect(): Flow<SocketEvent> = callbackFlow {
+
+        // ✅ 修正 1：將 commonHandler 提升到 callbackFlow 頂部
+        // 這樣 awaitClose 才能存取它
+        val commonHandler = io.socket.emitter.Emitter.Listener { args ->
+            val payload = args.joinToString { it.toString() }
+            Log.d(TAG, "[onAny] 收到事件 payload=$payload")
+        }
+
+        // ✅ 修正 2：將 events 列表提升到 callbackFlow 頂部
+        val events = listOf("chat_message", "ai_question_v2", "ai_response", "joined")
+
+
         try {
+            // 註冊所有你想看的事件
+            // 現在可以存取外部的 events 列表
+            for (evt in events) {
+                socket.on(evt, commonHandler)
+            }
+
+            Log.d(TAG, "✅ 已註冊事件攔截器: ${events.joinToString()}")
+
             Log.d(TAG, "🚀 設定 Socket 監聽器")
             Log.d(TAG, "🔌 Socket 連線狀態: ${socket.connected()}")
 
+            // ... (EVENT_CONNECT, EVENT_DISCONNECT, EVENT_CONNECT_ERROR 監聽器保持不變)
             socket.on(Socket.EVENT_CONNECT) {
                 Log.d(TAG, "✅ Socket 已連線")
                 trySend(SocketEvent.Connected)
@@ -46,6 +76,7 @@ class ChatWebSocketService @Inject constructor(
 
             // 監聽 chat_message 事件
             socket.on("chat_message") { args ->
+                // ... (chat_message 處理邏輯)
                 try {
                     Log.d(TAG, "📨 收到 chat_message")
                     val data = args[0] as JSONObject
@@ -73,6 +104,7 @@ class ChatWebSocketService @Inject constructor(
                 }
             }
 
+            //監聽題目
             socket.on("ai_question_v2") { args ->
                 val raw = args.firstOrNull()?.toString() ?: return@on
                 Log.d(TAG, "🧩 收到 ai_question_v2: $raw")
@@ -80,8 +112,10 @@ class ChatWebSocketService @Inject constructor(
             }
 
 
+
             // 監聽 trip 事件
             socket.on("trip") { args ->
+                // ... (trip 處理邏輯)
                 try {
                     Log.d(TAG, "🗺️ 收到 trip 資料")
                     val data = args[0] as JSONObject
@@ -112,8 +146,17 @@ class ChatWebSocketService @Inject constructor(
             socket.off(Socket.EVENT_CONNECT)
             socket.off(Socket.EVENT_DISCONNECT)
             socket.off(Socket.EVENT_CONNECT_ERROR)
+
+            // 移除所有專屬監聽器
             socket.off("chat_message")
+            socket.off("ai_question_v2") // <-- 現在可以存取
             socket.off("trip")
+
+            // 移除 commonHandler 註冊的所有事件
+            // 現在可以存取 commonHandler 和 events 列表
+            for (evt in events) {
+                socket.off(evt, commonHandler)
+            }
         }
     }
 

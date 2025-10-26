@@ -29,6 +29,11 @@ import kotlinx.serialization.json.Json
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+
 
 @Singleton
 class ChatRepositoryImpl @Inject constructor(
@@ -71,6 +76,42 @@ class ChatRepositoryImpl @Inject constructor(
                 joinRoom(tripId, username, userId)
             }
     }
+
+    @Serializable
+    data class AiQuestionEnvelope(
+        @SerialName("user_id") val userId: String? = null,
+        // ✅ 關鍵修正：直接映射到你的 DTO
+        val message: QuestionV2Dto? = null
+    )
+
+
+    //gemini說他沒有被用到
+//    private fun parseQuestion(raw: String): SingleChoiceQuestion? {
+//        val s = raw.trim()
+//        // 非 JSON 直接略過
+//        if (s.isEmpty() || (s[0] != '{' && s[0] != '[')) {
+//            Log.d(TAG, "parseQuestion: 非 JSON，略過（${s.take(40)}…）")
+//            return null
+//        }
+//        return runCatching {
+//            json.decodeFromString<QuestionV2Dto>(s)
+//                .let(QuestionMapper::fromV2)
+//        }.recoverCatching { e1 ->
+//            Log.w(TAG, "V2 直送解析失敗，改試信封：${e1.message}")
+//            val env = json.decodeFromString<AiQuestionEnvelope>(s)
+//            val msg = env.message ?: error("Envelope missing message")
+//            if (msg is JsonObject) {
+//                json.decodeFromString<QuestionV2Dto>(msg.toString())
+//                    .let(QuestionMapper::fromV2)
+//            } else error("Envelope message is not an object")
+//        }.recoverCatching { e2 ->
+//            Log.w(TAG, "信封解析失敗，改試 Legacy：${e2.message}")
+//            json.decodeFromString<LegacyQuestionDto>(s)
+//                .let(QuestionMapper::fromLegacy) ?: error("Legacy 內容不完整")
+//        }.onFailure { e ->
+//            Log.e(TAG, "❌ parseQuestion 失敗：${e.message}\nraw=${s.take(200)}…", e)
+//        }.getOrNull()
+//    }
 
     private fun startListeningToSocketEvents() {
         repositoryScope.launch {
@@ -118,59 +159,75 @@ class ChatRepositoryImpl @Inject constructor(
                         }
                     }
 
+                    is SocketEvent.AiQuestionV2 -> {
+                        // 假設 SocketEvent.AiQuestionV2 確實有一個名為 rawJson 的屬性
+                        val rawJson = event.rawJson // 確保 event 裡有這個屬性，否則這裡會報錯
+
+                        Log.d(TAG, "🧩 收到 ai_question_v2: $rawJson")
+
+                        val questionDto = try {
+                            // ✅ 修正：移除具名參數 'string ='
+                            val envelope = json.decodeFromString<AiQuestionEnvelope>(rawJson)
+                            envelope.message // 取得 QuestionV2Dto?
+                        } catch (e: Exception) {
+                            Log.e(TAG, "❌ AiQuestionV2 JSON 解析失敗", e)
+                            null
+                        }
+
+                        val domainQuestion = questionDto?.let(QuestionMapper::fromV2)
+
+                        if (domainQuestion != null) {
+                            val id = UUID.randomUUID().toString()
+                            val newMessage = Message(
+                                id = id,
+                                tripId = currentTripId ?: "",
+                                sender = User("ai", "Trip AI", "", null, emptyList()),
+                                text = domainQuestion.text,
+                                timestamp = System.currentTimeMillis(),
+                                isAi = true,
+                                singleChoiceQuestion = domainQuestion, // 成功賦值
+                                suggestions = null
+                            )
+
+                            // ✅ 修正：將新訊息添加到狀態流
+                            val list = _realtimeMessages.value.toMutableList()
+                            list.add(newMessage)
+                            _realtimeMessages.value = list
+                            Log.d(TAG, "✅ 題目訊息已加入，總數: ${list.size}")
+                        }
+                    }
+
                     is SocketEvent.SystemMessage -> {
                         Log.d(TAG, "📢 收到系統訊息: ${event.message}")
 
-                        // 試著把字串解析成題目（V2 -> Legacy）
-                        val parsedQuestion: SingleChoiceQuestion? =
-                            runCatching {
-                                json.decodeFromString<QuestionV2Dto>(event.message)
-                                    .let { QuestionMapper.fromV2(it) }
-                            }.getOrElse {
-                                runCatching {
-                                    json.decodeFromString<LegacyQuestionDto>(event.message)
-                                        .let { QuestionMapper.fromLegacy(it) }
-                                }.getOrNull()
-                            }
+                        // ❌ 刪除：移除所有 runCatching 解析題目的邏輯
+                        // ...
 
-                        val msg =
-                            if (parsedQuestion != null) {
-                                // 題卡
-                                Message(
-                                    id = System.currentTimeMillis().toString(),
-                                    tripId = currentTripId ?: "",
-                                    sender = User("system", "Trip AI", "", null, emptyList()),
-                                    text = "",
-                                    timestamp = System.currentTimeMillis(),
-                                    isAi = true,
-                                    suggestions = null,
-                                    isQuestion = true,
-                                    question = parsedQuestion
-                                )
-                            } else {
-                                // 一般系統文字
-                                Message(
-                                    id = System.currentTimeMillis().toString(),
-                                    tripId = currentTripId ?: "",
-                                    sender = User("system", "Trip AI", "", null, emptyList()),
-                                    text = event.message,
-                                    timestamp = System.currentTimeMillis(),
-                                    isAi = true,
-                                    suggestions = null,
-                                    isQuestion = false,
-                                    question = null
-                                )
-                            }
+                        // 只需要創建一般系統文字訊息即可
+                        val msg = Message(
+                            id = System.currentTimeMillis().toString(),
+                            tripId = currentTripId ?: "",
+                            sender = User("system", "Trip AI", "", null, emptyList()),
+                            text = event.message,
+                            timestamp = System.currentTimeMillis(),
+                            isAi = true,
+                            suggestions = null,
+                            // ❌ 移除這兩個不必要的欄位
+                            // isQuestion = false,
+                            // question = null,
+                        )
 
                         val list = _realtimeMessages.value.toMutableList()
                         list.add(msg)
                         _realtimeMessages.value = list
-                        Log.d(TAG, "✅ 系統訊息已加入，總數: ${list.size}")
+                        Log.d(TAG, "✅ 系統訊息 (文本) 已加入，總數: ${list.size}")
                     }
-
+                    // ✅ 修正：加入 else 分支來處理所有其他未列出的 SocketEvent
                     else -> {
                         Log.d(TAG, "ℹ️ 忽略事件: ${event::class.simpleName}")
                     }
+
+
                 }
             }
         }

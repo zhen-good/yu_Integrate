@@ -14,6 +14,8 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import android.util.Log
+import com.example.thelastone.data.model.ChoiceOption
+import com.example.thelastone.data.model.SingleChoiceQuestion
 import javax.inject.Inject
 
 sealed interface ChatUiState {
@@ -179,5 +181,17 @@ class TripChatViewModel @Inject constructor(
             tripId = tripId,
             message = "選擇：${place.name}"
         )
+    }
+    fun onSelectQuestionOption(question: SingleChoiceQuestion, option: ChoiceOption) {
+        // 這裡只是新增方法，讓編譯器通過
+        // 實際的邏輯 (發送答案) 你之後需要補上，可以參考前一個回答中的範例。
+
+        // 為了讓紅線消失，你可以暫時將 body 留空或加入一行 Log
+        Log.d("ChatVM", "Question Answered: ${question.id} with value ${option.value}")
+
+        // 實際應執行的邏輯 (請在實作 ChatRepositoryImpl 後補上):
+        // viewModelScope.launch {
+        //     ... 發送答案到 chatRepo.sendQuestionAnswer ...
+        // }
     }
 }

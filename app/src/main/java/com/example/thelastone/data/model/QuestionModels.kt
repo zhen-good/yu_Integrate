@@ -15,7 +15,7 @@ import kotlinx.serialization.Serializable
 data class QuestionV2Dto(
     @SerialName("schema_version") val schemaVersion: Int = 2,
     val type: QuestionTypeDto = QuestionTypeDto.SINGLE_CHOICE,
-    @SerialName("question_id") val questionId: String,
+    @SerialName("question_id") val questionId: String? = null, // ← 可為空
     val text: String,
     val options: List<OptionV2Dto>,
     val constraints: ConstraintsDto? = null,

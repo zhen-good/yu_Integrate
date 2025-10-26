@@ -7,10 +7,11 @@ import com.example.thelastone.data.model.*
 
 object QuestionMapper {
     fun fromV2(dto: QuestionV2Dto): SingleChoiceQuestion {
+        val id = dto.questionId ?: "q_${dto.text.hashCode()}"
         val opts = dto.options
             .sortedBy { it.choice }
             .map { ChoiceOption(it.choice, it.label ?: it.value ?: it.choice, it.value, it.key) }
-        return SingleChoiceQuestion(id = dto.questionId, text = dto.text, options = opts)
+        return SingleChoiceQuestion(id = id, text = dto.text, options = opts)
     }
 
     fun fromLegacy(dto: LegacyQuestionDto): SingleChoiceQuestion? {
@@ -20,7 +21,7 @@ object QuestionMapper {
             .sortedBy { it.id }
             .mapNotNull {
                 val c = it.id ?: return@mapNotNull null
-                ChoiceOption(choice = c, label = it.text ?: it.value ?: c, value = it.value)
+                ChoiceOption(c, it.text ?: it.value ?: c, it.value)
             }
         if (opts.isEmpty()) return null
         return SingleChoiceQuestion(id = qId, text = qText, options = opts)
