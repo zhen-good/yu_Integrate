@@ -16,7 +16,7 @@ data class QuestionV2Dto(
     @SerialName("schema_version") val schemaVersion: Int = 2,
     val type: QuestionTypeDto = QuestionTypeDto.SINGLE_CHOICE,
     @SerialName("question_id") val questionId: String? = null, // ← 可為空
-    val text: String,
+    val text: List<TextEntryDto>,
     val options: List<OptionV2Dto>,
     val constraints: ConstraintsDto? = null,
     val meta: Map<String, String>? = null
@@ -28,12 +28,13 @@ enum class QuestionTypeDto {
     @SerialName("text") TEXT
 }
 
+// 並且 OptionV2Dto 的定義也要正確 (例如：沒有多餘的 @SerialName 錯位)
 @Serializable
 data class OptionV2Dto(
-    val choice: String,                 // "A","B","C"…
-    val label: String? = null,          // 顯示文字
-    val value: String? = null,          // 後端用值
-    val key: String? = null             // 若有
+    val choice: String,
+    val label: String? = null,
+    val value: String,
+    val key: String? = null
 )
 
 @Serializable
@@ -81,3 +82,10 @@ data class AiQuestionEnvelope(
     val message: QuestionV2Dto? = null
 )
 
+
+@Serializable
+data class TextEntryDto(
+    val key: String,
+    val question: String, // ✅ 關鍵：用於提取題目文字
+    val choices: kotlinx.serialization.json.JsonObject? = null // 包含選擇的物件，可能用不到但保留
+)

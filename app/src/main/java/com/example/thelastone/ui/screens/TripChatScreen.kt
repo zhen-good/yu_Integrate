@@ -16,8 +16,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.thelastone.data.model.ChoiceOption
 import com.example.thelastone.data.model.Message
 import com.example.thelastone.data.model.PlaceLite
+import com.example.thelastone.data.model.SingleChoiceQuestion
 import com.example.thelastone.data.model.Trip
 import com.example.thelastone.ui.state.ErrorState
 import com.example.thelastone.ui.state.LoadingState
@@ -50,8 +52,10 @@ fun TripChatScreen(
                 MessagesList(
                     modifier = Modifier.weight(1f),
                     messages = st.messages,
-                    myId = st.myId,                        // ← 這裡
-                    onSelectSuggestion = viewModel::onSelectSuggestion
+                    myId = st.myId,
+                    onSelectSuggestion = viewModel::onSelectSuggestion,
+                    // ✅ 修正：新增 onSelectQuestionOption 參數
+                    onSelectQuestionOption = viewModel::onSelectQuestionOption
                 )
 
                 Row(
@@ -91,8 +95,12 @@ fun TripChatScreen(
 private fun MessagesList(
     modifier: Modifier = Modifier,
     messages: List<Message>,
-    myId: String,                                   // ← 新增
-    onSelectSuggestion: (PlaceLite) -> Unit
+    myId: String,
+    onSelectSuggestion: (PlaceLite) -> Unit,
+    // ✅ 修正：新增 onSelectQuestionOption 參數
+    onSelectQuestionOption: (SingleChoiceQuestion, ChoiceOption) -> Unit
+    // 記得要先定義 ChoiceOption, SingleChoiceQuestion
+    // 並且在 TripChatScreen 呼叫 MessagesList 時要傳入這個參數
 ) {
     val listState = rememberLazyListState()
     val keyboardOpen by rememberKeyboardOpen()
@@ -154,7 +162,15 @@ private fun MessagesList(
                                         }
                                     }
                                 }
-                            }
+                                //✅ 修正：新增題目卡片的渲染邏輯
+                                val question = msg.singleChoiceQuestion
+                                if (question != null) {
+                                    Spacer(Modifier.height(8.dp)) // 在文本/建議和選項之間留出間距
+                                    AiQuestionCard(
+                                        question = question,
+                                        onSelectOption = onSelectQuestionOption
+                                    )
+                                }                            }
                         }
                     }
                 }
@@ -253,6 +269,36 @@ private fun SuggestionCard(
             }
             place.rating?.let {
                 Text("★ $it", style = MaterialTheme.typography.labelMedium)
+            }
+        }
+    }
+}
+
+@Composable
+private fun AiQuestionCard(
+    question: SingleChoiceQuestion,
+    onSelectOption: (SingleChoiceQuestion, ChoiceOption) -> Unit
+) {
+    // 渲染題目文本（可以選擇在主 Text(msg.text) 中顯示，這裡則只顯示按鈕）
+    // Text(question.text, style = MaterialTheme.typography.bodyLarge)
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        question.options.forEach { option ->
+            Button(
+                onClick = { onSelectOption(question, option) },
+                modifier = Modifier.fillMaxWidth(),
+                // 將按鈕樣式調整為與背景色區隔，以確保看得見
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                )
+            ) {
+                // 左對齊標籤
+                Text(
+                    option.label,
+                    modifier = Modifier.weight(1f),
+                    textAlign = TextAlign.Start
+                )
             }
         }
     }
