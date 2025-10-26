@@ -89,3 +89,9 @@ data class TextEntryDto(
     val question: String, // ✅ 關鍵：用於提取題目文字
     val choices: kotlinx.serialization.json.JsonObject? = null // 包含選擇的物件，可能用不到但保留
 )
+
+@Serializable
+data class QuestionAnswerDto(
+    val questionId: String,
+    val answer: String
+)

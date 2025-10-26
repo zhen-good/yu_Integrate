@@ -8,6 +8,7 @@ import com.example.thelastone.data.mapper.QuestionMapper
 import com.example.thelastone.data.model.LegacyQuestionDto
 import com.example.thelastone.data.model.Message
 import com.example.thelastone.data.model.PlaceLite
+import com.example.thelastone.data.model.QuestionAnswerDto
 import com.example.thelastone.data.model.QuestionV2Dto
 import com.example.thelastone.data.model.SingleChoiceQuestion
 import com.example.thelastone.data.model.User
@@ -77,12 +78,17 @@ class ChatRepositoryImpl @Inject constructor(
             }
     }
 
+
+
+
     @Serializable
     data class AiQuestionEnvelope(
         @SerialName("user_id") val userId: String? = null,
         // ✅ 關鍵修正：直接映射到你的 DTO
         val message: QuestionV2Dto? = null
     )
+
+
 
 
     //gemini說他沒有被用到
@@ -292,6 +298,32 @@ class ChatRepositoryImpl @Inject constructor(
         } else {
             Log.e(TAG, "❌ WebSocket 未連線，無法發送訊息")
         }
+    }
+
+    override suspend fun sendQuestionAnswer(
+        tripId: String,
+        questionId: String,
+        value: String
+    ) {
+        // 1. 建立包含答案的 JSON Payload
+        // 1. 建立包含答案的 JSON Payload
+        val answerPayload = json.encodeToString( // ✅ 修正：使用小寫 'json' 實例
+            QuestionAnswerDto(
+                questionId = questionId,
+                answer = value
+            )
+        )
+
+        // 2. 透過 Socket 服務發送 "send_answer" 事件給後端
+        webSocketService.emit("send_answer", answerPayload, tripId) // ✅ 修正！
+
+        // ⚠️ 注意：你需要確保 ChatWebSocketService 有一個 emit 函式，例如：
+        /*
+        // ChatWebSocketService.kt
+        fun emit(event: String, data: String, room: String) {
+            socket.emit(event, data, room) // 假設 socket.io 支援 room
+        }
+        */
     }
 
     override suspend fun analyze(tripId: String) {

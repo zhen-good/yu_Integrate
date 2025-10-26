@@ -16,7 +16,10 @@ import kotlinx.coroutines.launch
 import android.util.Log
 import com.example.thelastone.data.model.ChoiceOption
 import com.example.thelastone.data.model.SingleChoiceQuestion
+import com.example.thelastone.data.model.User
+import java.util.UUID
 import javax.inject.Inject
+
 
 sealed interface ChatUiState {
     data object Loading : ChatUiState
@@ -182,16 +185,72 @@ class TripChatViewModel @Inject constructor(
             message = "選擇：${place.name}"
         )
     }
+    // vm/TripChatViewModel.kt
+
     fun onSelectQuestionOption(question: SingleChoiceQuestion, option: ChoiceOption) {
-        // 這裡只是新增方法，讓編譯器通過
-        // 實際的邏輯 (發送答案) 你之後需要補上，可以參考前一個回答中的範例。
+        // 從當前狀態獲取使用者ID和選項文字
+        val currentState = state.value
+        val userId = (currentState as? ChatUiState.Data)?.myId
+        val messageText = option.label
 
-        // 為了讓紅線消失，你可以暫時將 body 留空或加入一行 Log
-        Log.d("ChatVM", "Question Answered: ${question.id} with value ${option.value}")
+        if (userId.isNullOrEmpty()) {
+            Log.e("ChatVM", "❌ 使用者 ID 為空，無法發送選項回覆")
+            return
+        }
 
-        // 實際應執行的邏輯 (請在實作 ChatRepositoryImpl 後補上):
-        // viewModelScope.launch {
-        //     ... 發送答案到 chatRepo.sendQuestionAnswer ...
-        // }
+        viewModelScope.launch {
+            // 1. 發送答案給後端（後端處理題目邏輯）
+            chatRepo.sendQuestionAnswer(
+                tripId = tripId, // ⬅️ 這裡的錯誤！
+                questionId = question.id,
+                value = option.value ?: option.label
+            )
+
+            // 2. ✅ 關鍵：模擬使用者訊息，通過 Repository 發送到 Socket
+            chatRepo.sendMessage(
+                userId = userId,
+                tripId = tripId,
+                message = messageText // 使用選項的文字作為訊息內容
+            )
+        }
+        // ❌ 刪除原本的 simulateUserMessage(question, option) 呼叫
     }
+
+//    private fun simulateUserMessage(question: SingleChoiceQuestion, option: ChoiceOption) {
+//        val currentState = state.value
+//        if (currentState !is ChatUiState.Data) return
+//
+//        val myId = currentState.myId
+//        val tripId = currentState.trip.id
+//        // 假設您在 ChatUiState.Data 中儲存了使用者的名稱
+//        val myUsername = currentState.myId // 請確保這個屬性存在
+//
+//        // 構建顯示給使用者的文字 (例如："悠閒漫遊")
+//        val userText = option.label
+//
+//        // 創建一個新的 Message 物件，標記為 isAi = false (使用者訊息)
+//        val userResponse = Message(
+//            id = UUID.randomUUID().toString(),
+//            tripId = tripId,
+//            sender = User(
+//                id = myId,
+//                name = myUsername,
+//                email = "",
+//                avatarUrl = null,
+//                friends = emptyList()
+//            ),
+//            text = userText,
+//            timestamp = System.currentTimeMillis(),
+//            isAi = false, // 關鍵：標記為使用者訊息
+//            suggestions = null,
+//            singleChoiceQuestion = nullTripChatViewModel
+//        )
+//
+//        // 將這個模擬訊息加入到狀態流中
+//        _state.update {
+//            if (it is ChatUiState.Data) {
+//                it.copy(messages = it.messages + userResponse)
+//            } else it
+//        }
+//    }
 }

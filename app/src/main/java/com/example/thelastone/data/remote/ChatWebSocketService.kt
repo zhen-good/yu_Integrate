@@ -31,6 +31,12 @@ class ChatWebSocketService @Inject constructor(
 
     private fun Socket.onAny(function: Any) {}
 
+    fun emit(event: String, data: String, room: String) {
+        // 假設 socket 是 Socket.IO 客戶端
+        socket.emit(event, data, room)
+    }
+
+
     fun connect(): Flow<SocketEvent> = callbackFlow {
 
         // ✅ 修正 1：將 commonHandler 提升到 callbackFlow 頂部
@@ -139,6 +145,7 @@ class ChatWebSocketService @Inject constructor(
             Log.e(TAG, "❌ 初始化失敗", e)
             trySend(SocketEvent.Error(e.message ?: "Unknown error"))
         }
+
 
 
         awaitClose {

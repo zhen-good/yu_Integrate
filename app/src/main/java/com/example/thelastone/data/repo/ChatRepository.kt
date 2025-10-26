@@ -23,6 +23,12 @@ interface ChatRepository {
 //    suspend fun refresh(tripId: String)
 
     suspend fun analyze(tripId: String)
+    // ✅ 新增：處理選項問題的回覆
+    suspend fun sendQuestionAnswer(
+        tripId: String,
+        questionId: String,
+        value: String
+    )
 
     // ✅ 新增這個方法
     fun sendMessage(userId: String, tripId: String, message: String)
