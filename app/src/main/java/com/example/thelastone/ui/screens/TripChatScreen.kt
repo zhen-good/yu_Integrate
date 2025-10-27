@@ -245,7 +245,7 @@ private fun MessagesList(
 
 @Composable
 private fun SuggestionCard(
-    place: PlaceLite,
+    place: PlaceLite,//這邊是我傳什麼資料進去
     onClick: () -> Unit
 ) {
     Surface(
