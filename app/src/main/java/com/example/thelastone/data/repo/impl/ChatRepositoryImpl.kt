@@ -5,6 +5,7 @@ import com.example.thelastone.data.local.MessageDao
 import com.example.thelastone.data.local.MessageEntity
 import com.example.thelastone.data.local.SendStatus
 import com.example.thelastone.data.mapper.QuestionMapper
+import com.example.thelastone.data.model.AiResponsePayload
 import com.example.thelastone.data.model.LegacyQuestionDto
 import com.example.thelastone.data.model.Message
 import com.example.thelastone.data.model.PlaceLite
@@ -238,6 +239,47 @@ class ChatRepositoryImpl @Inject constructor(
                         list.add(msg)
                         _realtimeMessages.value = list
                         Log.d(TAG, "✅ 系統訊息 (文本) 已加入，總數: ${list.size}")
+                    }
+
+                    is SocketEvent.AiResponse -> { // 🎯 新增的 AI 建議事件處理
+                        val rawJson = event.rawJson
+                        Log.d(TAG, "🤖 收到 AI 建議 (ai_response): $rawJson")
+
+                        try {
+                            // 確保您已將 AiResponsePayload 等 DTO 導入
+                            val payload = json.decodeFromString<AiResponsePayload>(rawJson)
+
+                            // 1. 處理 AI 的文本訊息 (必須顯示)
+                            currentTripId?.let { tripId ->
+                                val aiMessage = Message(
+                                    id = UUID.randomUUID().toString(),
+                                    tripId = tripId,
+                                    sender = User("ai", "Trip AI", "", null, emptyList()),
+                                    text = payload.message,
+                                    timestamp = System.currentTimeMillis(),
+                                    isAi = true,
+                                    // ... 其他欄位設為 null 或預設值
+                                )
+                                val list = _realtimeMessages.value.toMutableList()
+                                list.add(aiMessage)
+                                _realtimeMessages.value = list
+                                Log.d(TAG, "✅ AI 文本提示已加入列表")
+                            }
+
+
+                            // 2. 處理結構化的建議卡片
+                            if (payload.recommendation != null) {
+                                // 🚨 這是最關鍵的一步：將結構化的建議儲存起來，供 UI 顯示建議卡片
+                                // 這裡需要一個新的狀態（例如 MutableStateFlow）來保存這個建議
+                                // 假設您在 ChatRepository 中定義了 setPendingRecommendation 函式
+                                // setPendingRecommendation(payload.recommendation)
+
+                                Log.d(TAG, "✅ 結構化 AI 建議已儲存 (Type: ${payload.recommendation.type})")
+                            }
+
+                        } catch (e: Exception) {
+                            Log.e(TAG, "❌ AI 建議 JSON 解析失敗", e)
+                        }
                     }
 
                     else -> {

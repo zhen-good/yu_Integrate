@@ -17,7 +17,10 @@ sealed class SocketEvent {
     data class AiQuestionV2(val rawJson: String) : SocketEvent()
 
     /** 後端問答題（舊版本） */
-    data class AiQuestionLegacy(val raw: String) : SocketEvent()
+//    data class AiQuestionLegacy(val raw: String) : SocketEvent()
+
+    /**分析的問題 */
+    data class AiResponse(val rawJson: String) : SocketEvent() // 新增
 
 }
 

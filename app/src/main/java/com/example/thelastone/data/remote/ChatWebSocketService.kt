@@ -131,6 +131,20 @@ class ChatWebSocketService @Inject constructor(
                     Log.e(TAG, "❌ 解析 trip 失敗", e)
                 }
             }
+            // 🎯 新增：監聽 AI 建議的 ai_response 事件
+            socket.on("ai_response") { args ->
+                val raw = args.firstOrNull()?.toString() ?: return@on
+                Log.d(TAG, "🤖 收到 ai_response (AI 建議): $raw")
+
+                // 必須使用我們之前建議的 SocketEvent.AiResponse(rawJson: String)
+                // 將原始 JSON 傳遞給上層 Repository 進行解析
+                try {
+                    // 確保 SocketEvent.AiResponse 已經定義在 data.remote.SocketEvent 中
+                    trySend(SocketEvent.AiResponse(raw))
+                } catch (e: Exception) {
+                    Log.e(TAG, "❌ 處理 ai_response 失敗", e)
+                }
+            }
 
             // ✅ 如果還沒連線，開始連線
             if (!socket.connected()) {
