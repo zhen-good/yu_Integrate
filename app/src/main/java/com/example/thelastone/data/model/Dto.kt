@@ -40,7 +40,19 @@ data class SocketTripInner(
 
 //---------------------------------------------
 
+// DTO 1: 按鈕的資料結構
 @Serializable
-data class SocketTripResponse(
-    val trip: SocketTripInner // ⬅️ 匹配 JSON 中的 "trip" 鍵
+data class ButtonDto(
+    val label: String, // 按鈕上顯示的文字，例如 "1. Shonojuku Museum" 或 "略過"
+    val value: String  // 點擊後要回傳給後端的內容，例如 "1" 或 "略過"
+)
+
+// DTO 2: 更新 AiResponsePayload (假設這是您處理 "ai_response" 事件的 DTO)
+// 確保您使用這個 DTO 來接收 ai_response 事件的完整內容。
+@Serializable
+data class AiResponsePayload(
+    val message: String, // 🎯 修正：設定為可空並給予預設值
+    val recommendation: AiRecommendationData? = null, // 結構化的建議數據
+    val buttons: List<ButtonDto>? = null // <--- 讓前端可以渲染按鈕的關鍵
+    // 其他欄位，例如 user_id, type 等如果後端有傳送，也應該在這裡定義
 )

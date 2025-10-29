@@ -171,7 +171,7 @@ private fun MainNavHost(
     NavHost(
         navController = nav,
 //        startDestination = Root.Explore.route// ← 改回這個!
-        startDestination = "trip_chat/trip1234"// ← 改回這個!
+        startDestination = "trip_chat/69008b9417d53443dece1be4"// ← 改回這個!
     ) {
 
         // ===== 頂層分頁 =====

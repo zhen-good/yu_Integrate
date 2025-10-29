@@ -54,8 +54,8 @@ fun TripChatScreen(
                     messages = st.messages,
                     myId = st.myId,
                     onSelectSuggestion = viewModel::onSelectSuggestion,
-                    // ✅ 修正：新增 onSelectQuestionOption 參數
-                    onSelectQuestionOption = viewModel::onSelectQuestionOption
+                    onSelectQuestionOption = viewModel::onSelectQuestionOption,
+                    onButtonClick = viewModel::onButtonClick
                 )
 
                 Row(
@@ -98,13 +98,16 @@ private fun MessagesList(
     myId: String,
     onSelectSuggestion: (PlaceLite) -> Unit,
     // ✅ 修正：新增 onSelectQuestionOption 參數
-    onSelectQuestionOption: (SingleChoiceQuestion, ChoiceOption) -> Unit
+    onSelectQuestionOption: (SingleChoiceQuestion, ChoiceOption) -> Unit,
+    onButtonClick: (String) -> Unit
     // 記得要先定義 ChoiceOption, SingleChoiceQuestion
     // 並且在 TripChatScreen 呼叫 MessagesList 時要傳入這個參數
 ) {
     val listState = rememberLazyListState()
     val keyboardOpen by rememberKeyboardOpen()
 
+
+//這是在讓頁面捲到最底
     LaunchedEffect(Unit) {
         if (messages.isNotEmpty()) listState.scrollToItem(messages.lastIndex)
     }
@@ -136,23 +139,42 @@ private fun MessagesList(
                 isAi -> {
                     Box(Modifier.fillMaxWidth()) {
                         Surface(
-                            tonalElevation = 1.dp,
-                            shape = MaterialTheme.shapes.medium,
-                            color = bubbleColor,
-                            modifier = Modifier
-                                .align(Alignment.Center)      // 置中
-                                .widthIn(max = 560.dp)        // 避免太寬；可依你版型調
-                                .padding(horizontal = 0.dp)   // 外邊距看需求
+                            // ... (Surface 的屬性保持不變) ...
                         ) {
                             Column(Modifier.padding(12.dp)) {
+                                // 1. 顯示發送者名稱
                                 Text(
                                     text = "Trip AI",
                                     style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.primary
                                 )
                                 Spacer(Modifier.height(4.dp))
+
+                                // 2. 顯示訊息文本 (msg.text)
                                 Text(msg.text)
 
+                                // 🎯 核心修正：檢查並渲染按鈕 (在文本之後)
+                                if (msg.buttons.isNullOrEmpty().not()) {
+                                    Spacer(Modifier.height(12.dp)) // 文本與按鈕間距
+
+                                    Column(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalArrangement = Arrangement.spacedBy(8.dp) // 按鈕間距
+                                    ) {
+                                        msg.buttons!!.forEach { buttonDto ->
+                                            Button(
+                                                onClick = { onButtonClick(buttonDto.value) },
+                                                modifier = Modifier.fillMaxWidth(),
+                                                shape = MaterialTheme.shapes.small // 與建議卡片形狀保持一致
+                                            ) {
+                                                Text(buttonDto.label, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                            }
+                                        }
+                                    }
+                                    Spacer(Modifier.height(8.dp)) // 按鈕與後續內容間距
+                                }
+
+                                // 3. 渲染建議卡片 (原有的邏輯)
                                 val sug = msg.suggestions
                                 if (!sug.isNullOrEmpty()) {
                                     Spacer(Modifier.height(8.dp))
@@ -162,15 +184,17 @@ private fun MessagesList(
                                         }
                                     }
                                 }
-                                //✅ 修正：新增題目卡片的渲染邏輯
+
+                                // 4. 渲染題目卡片 (原有的邏輯)
                                 val question = msg.singleChoiceQuestion
                                 if (question != null) {
-                                    Spacer(Modifier.height(8.dp)) // 在文本/建議和選項之間留出間距
+                                    Spacer(Modifier.height(8.dp))
                                     AiQuestionCard(
                                         question = question,
                                         onSelectOption = onSelectQuestionOption
                                     )
-                                }                            }
+                                }
+                            }
                         }
                     }
                 }

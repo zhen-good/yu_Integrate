@@ -47,7 +47,7 @@ class ChatWebSocketService @Inject constructor(
         }
 
         // ✅ 修正 2：將 events 列表提升到 callbackFlow 頂部
-        val events = listOf("chat_message", "ai_question_v2", "ai_response", "joined")
+        val events = listOf("chat_message", "ai_question_v2", "ai_response", "joined","trip")
 
 
         try {
@@ -117,20 +117,41 @@ class ChatWebSocketService @Inject constructor(
                 trySend(SocketEvent.AiQuestionV2(raw))
             }
 
-
-
             // 監聽 trip 事件
-            socket.on("trip") { args ->
-                // ... (trip 處理邏輯)
+            // 假設這段程式碼位於您的 ChatRepositoryImpl 或 SocketRepositoryImpl 內部
+
+            socket.on("trip") { args -> // 🎯 將監聽的事件名稱改為 "trip"
+                // ... (保持內部處理邏輯不變)
                 try {
-                    Log.d(TAG, "🗺️ 收到 trip 資料")
+                    Log.d(TAG, "📨 收到 trip 事件 (行程文本回覆)") // 修正日誌訊息
                     val data = args[0] as JSONObject
-                    val nodes = data.getJSONArray("nodes")
-                    Log.d(TAG, "🗺️ 節點數量: ${nodes.length()}")
+                    Log.d(TAG, "📨 資料: $data")
+
+                    val userId = data.getString("user_id")
+                    val messageText = data.getString("message")
+
+                    // 由於後端傳送的 user_id 是 "系統"，所以會觸發 SystemMessage
+                    if (userId == "系統") {
+                        Log.d(TAG, "📢 系統訊息 (行程): $messageText")
+                        trySend(SocketEvent.SystemMessage(messageText)) // 前端會將其渲染為 AI 訊息
+                    } else {
+                        // ... (如果是非系統用戶訊息，處理邏輯不變)
+                        val message = ChatMessage(
+                            id = System.currentTimeMillis().toString(),
+                            content = messageText,
+                            username = userId,
+                            userId = userId,
+                            timestamp = System.currentTimeMillis()
+                        )
+                        Log.d(TAG, "✅ 用戶訊息: ${message.content}")
+                        trySend(SocketEvent.NewMessage(message))
+                    }
                 } catch (e: Exception) {
-                    Log.e(TAG, "❌ 解析 trip 失敗", e)
+                    // 修正日誌訊息
+                    Log.e(TAG, "❌ 解析 trip 事件內容失敗", e)
                 }
             }
+
             // 🎯 新增：監聽 AI 建議的 ai_response 事件
             socket.on("ai_response") { args ->
                 val raw = args.firstOrNull()?.toString() ?: return@on

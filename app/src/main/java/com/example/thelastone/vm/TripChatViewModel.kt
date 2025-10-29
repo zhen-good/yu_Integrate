@@ -215,6 +215,33 @@ class TripChatViewModel @Inject constructor(
         }
         // ❌ 刪除原本的 simulateUserMessage(question, option) 呼叫
     }
+    // vm/TripChatViewModel.kt (新增以下程式碼)
+
+    // 🎯 這是解決 Unresolved reference 'onButtonClick' 的關鍵！
+    fun onButtonClick(buttonValue: String) = viewModelScope.launch {
+
+        // 1. 取得使用者 ID
+        val userId = session.auth.first()?.user?.id
+        if (userId.isNullOrEmpty()) {
+            Log.e("ChatVM", "❌ 使用者 ID 為空，無法發送按鈕回覆")
+            return@launch
+        }
+
+        // 2. 將按鈕的值作為新的聊天訊息發送出去
+        // 這是為了讓後端知道使用者選擇了哪個選項，並讓 UI 顯示使用者的選擇。
+        try {
+            chatRepo.sendMessage(
+                userId = userId,
+                tripId = tripId,
+                message = buttonValue // 將按鈕的 value (例如 "1" 或 "略過") 作為訊息文本發送
+            )
+            Log.d("ChatVM", "✅ 按鈕值已發送: $buttonValue")
+
+        } catch (e: Exception) {
+            Log.e("ChatVM", "❌ 發送按鈕值失敗: ${e.message}", e)
+        }
+    }
+}
 
 //    private fun simulateUserMessage(question: SingleChoiceQuestion, option: ChoiceOption) {
 //        val currentState = state.value
@@ -253,4 +280,4 @@ class TripChatViewModel @Inject constructor(
 //            } else it
 //        }
 //    }
-}
+

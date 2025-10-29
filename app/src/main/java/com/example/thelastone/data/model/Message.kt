@@ -12,6 +12,7 @@ data class Message(
     //看訊息是不是問題的訊息，是的話就改成用新版的問題格式
     val isQuestion: Boolean = false,
     val question: SingleChoiceQuestion? = null,
+    val buttons: List<ButtonDto>? = null, // 確保您已導入 ButtonDto
     val singleChoiceQuestion: SingleChoiceQuestion? = null,
 )
 

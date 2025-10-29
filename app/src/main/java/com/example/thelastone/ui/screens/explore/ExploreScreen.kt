@@ -182,7 +182,7 @@ fun ExploreScreen(
                 onRetry = { viewModel.retry() } // 這是 Trips 的重試
             )
             else -> {
-                // Trips 區
+                // Trips 區(popular trip)
                 TripsSection(
                     title = "Popular Trips",
                     trips = ui.popularTrips,

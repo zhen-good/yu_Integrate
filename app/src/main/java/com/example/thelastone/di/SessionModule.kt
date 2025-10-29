@@ -2,10 +2,6 @@ package com.example.thelastone.di
 
 import com.example.thelastone.data.model.AuthUser
 import com.example.thelastone.data.model.User
-import dagger.Module
-import dagger.Provides
-import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import javax.inject.Inject
