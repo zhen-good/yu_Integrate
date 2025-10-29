@@ -21,6 +21,7 @@ sealed class SocketEvent {
 
     /**分析的問題 */
     data class AiResponse(val rawJson: String) : SocketEvent() // 新增
+    data class TripDataReceived(val rawJson: String) : SocketEvent()
 
 }
 

@@ -1,8 +1,10 @@
 package com.example.thelastone.data.repo.impl
 
+import android.util.Log
 import com.example.thelastone.data.model.Activity
 import com.example.thelastone.data.model.Trip
 import com.example.thelastone.data.model.TripForm
+import com.example.thelastone.data.remote.TripApiService
 import com.example.thelastone.data.repo.TripRepository
 import com.example.thelastone.data.repo.TripStats
 import kotlinx.coroutines.flow.Flow
@@ -17,7 +19,8 @@ import javax.inject.Singleton
  */
 @Singleton
 class TripRepositoryImpl @Inject constructor(
-    // 您其他的依賴注入，例如 Firestore, RemoteDataSource 等
+    // ✅ 2. 在這裡注入您的 API 服務，並取名為 tripApiService
+    private val tripApiService: TripApiService
 ) : TripRepository {
 
     /**
@@ -74,7 +77,19 @@ class TripRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getTripDetail(tripId: String): Trip {
-        TODO("尚未實作 getTripDetail")
+        // ✅ 修正：換成您真正打 API 撈資料的程式碼
+        return try {
+            Log.d("TripRepo", "📡 正在透過 API 取得 tripId: $tripId 的詳細資料...")
+
+            // ✅ 3. 使用您在建構子中定義的 'tripApiService'
+            val tripData = tripApiService.getTripDetail(tripId)
+
+            Log.d("TripRepo", "✅ 成功取得行程資料: ${tripData.name}")
+            tripData // 成功時回傳 Trip 物件
+        } catch (e: Exception) {
+            Log.e("TripRepo", "❌ 取得行程 $tripId 詳細資料失敗", e)
+            throw e // 發生錯誤時把例外拋出
+        }
     }
 
     override fun observeTripDetail(tripId: String): Flow<Trip> {

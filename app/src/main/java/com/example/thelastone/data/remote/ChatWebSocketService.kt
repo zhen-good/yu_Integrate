@@ -120,35 +120,14 @@ class ChatWebSocketService @Inject constructor(
             // 監聽 trip 事件
             // 假設這段程式碼位於您的 ChatRepositoryImpl 或 SocketRepositoryImpl 內部
 
-            socket.on("trip") { args -> // 🎯 將監聽的事件名稱改為 "trip"
-                // ... (保持內部處理邏輯不變)
+            socket.on("trip") { args ->
+                val raw = args.firstOrNull()?.toString() ?: return@on
+                Log.d(TAG, "🚢 收到 'trip' 事件 (原始 payload): $raw")
                 try {
-                    Log.d(TAG, "📨 收到 trip 事件 (行程文本回覆)") // 修正日誌訊息
-                    val data = args[0] as JSONObject
-                    Log.d(TAG, "📨 資料: $data")
-
-                    val userId = data.getString("user_id")
-                    val messageText = data.getString("message")
-
-                    // 由於後端傳送的 user_id 是 "系統"，所以會觸發 SystemMessage
-                    if (userId == "系統") {
-                        Log.d(TAG, "📢 系統訊息 (行程): $messageText")
-                        trySend(SocketEvent.SystemMessage(messageText)) // 前端會將其渲染為 AI 訊息
-                    } else {
-                        // ... (如果是非系統用戶訊息，處理邏輯不變)
-                        val message = ChatMessage(
-                            id = System.currentTimeMillis().toString(),
-                            content = messageText,
-                            username = userId,
-                            userId = userId,
-                            timestamp = System.currentTimeMillis()
-                        )
-                        Log.d(TAG, "✅ 用戶訊息: ${message.content}")
-                        trySend(SocketEvent.NewMessage(message))
-                    }
+                    // ✅
+                    trySend(SocketEvent.TripDataReceived(raw))
                 } catch (e: Exception) {
-                    // 修正日誌訊息
-                    Log.e(TAG, "❌ 解析 trip 事件內容失敗", e)
+                    Log.e(TAG, "❌ 處理 'trip' 事件失敗", e)
                 }
             }
 

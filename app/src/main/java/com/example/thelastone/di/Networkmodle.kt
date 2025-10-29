@@ -2,12 +2,14 @@ package com.example.thelastone.di
 
 import android.os.Build
 import android.util.Log
+import com.example.thelastone.data.remote.TripApiService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import io.socket.client.IO
 import io.socket.client.Socket
+import retrofit2.Retrofit
 import javax.inject.Singleton
 
 @Module
@@ -19,9 +21,9 @@ object NetworkModule {
     // 🔥 關鍵修改:根據裝置類型使用不同網址
     private fun getSocketUrl(): String {
         return if (isEmulator()) {
-            "http://10.0.2.2:5000"  // 模擬器用這個
+            "http://10.0.2.2:5003"  // 模擬器用這個
         } else {
-            "http://172.20.10.4:5000"  // 實體手機用這個(你的電腦 IP)
+            "http://172.20.10.4:5003"  // 實體手機用這個(你的電腦 IP)
         }
     }
 
@@ -66,6 +68,13 @@ object NetworkModule {
         }
 
         return socket
+    }
+
+    @Provides
+    @Singleton
+    fun provideTripApiService(retrofit: Retrofit): TripApiService {
+        // 2. 告訴 Hilt 如何使用 Retrofit 來建立這個 Service
+        return retrofit.create(TripApiService::class.java)
     }
 
     /**

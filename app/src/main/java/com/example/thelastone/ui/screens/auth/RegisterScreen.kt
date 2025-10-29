@@ -33,14 +33,16 @@ fun RegisterScreen(
                 value = s.name,
                 onValueChange = { vm.updateName(it); vm.clearError() },
                 label = { Text("名稱") },
-                singleLine = true
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
             )
             OutlinedTextField(
                 value = s.email,
                 onValueChange = { vm.updateEmail(it); vm.clearError() },
                 label = { Text("Email") },
                 singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                modifier = Modifier.fillMaxWidth()
             )
             OutlinedTextField(
                 value = s.password,
@@ -48,7 +50,8 @@ fun RegisterScreen(
                 label = { Text("密碼") },
                 singleLine = true,
                 visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                modifier = Modifier.fillMaxWidth()
             )
 
             if (s.error != null) Text(s.error!!, color = MaterialTheme.colorScheme.error)

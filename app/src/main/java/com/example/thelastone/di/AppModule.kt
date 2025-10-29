@@ -26,7 +26,7 @@ import com.example.thelastone.data.remote.ChatService  // 🆕 添加這個 impo
 object AppModule {
 
     // 改成你的後端 API 網址
-    private const val BASE_URL = "http://10.0.2.2:5000" // Android 模擬器用
+    private const val BASE_URL = "http://10.0.2.2:5003" // Android 模擬器用
     // 實體裝置改成: "http://你的電腦IP:3000/"
 
 

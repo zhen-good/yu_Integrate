@@ -71,8 +71,15 @@ fun TripChatScreen(
                         leadingIcon = { Icon(Icons.Default.TipsAndUpdates, null) }
                     )
                     AssistChip(
-                        onClick = { viewModel.toggleTripSheet(true) },
-                        label = { Text("行程") },
+                        // ✅ 呼叫新函式，而不是只切換布林值
+                        onClick = { viewModel.loadTripAndShowSheet() },
+
+                        // ✅ 載入中禁用按鈕
+                        enabled = !st.tripLoading,
+
+                        // ✅ 根據 st.tripLoading 顯示不同文字
+                        label = { Text(if (st.tripLoading) "載入中..." else "行程") },
+
                         leadingIcon = { Icon(Icons.Default.CalendarMonth, null) }
                     )
                 }
