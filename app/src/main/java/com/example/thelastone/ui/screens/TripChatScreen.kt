@@ -313,8 +313,8 @@ private fun AiQuestionCard(
                 modifier = Modifier.fillMaxWidth(),
                 // 將按鈕樣式調整為與背景色區隔，以確保看得見
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
                 )
             ) {
                 // 左對齊標籤

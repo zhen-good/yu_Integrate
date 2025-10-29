@@ -76,9 +76,9 @@ class UserRepositoryImpl @Inject constructor(
 //        TODO("之後實作")
 //    }
 
-    override suspend fun searchUsers(keyword: String): List<User> {
-        TODO("之後實作")
-    }
+//    override suspend fun searchUsers(keyword: String): List<User> {
+//        TODO("之後實作")
+//    }
 
     override suspend fun sendFriendRequest(toUserId: String) {
         TODO("之後實作")

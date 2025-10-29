@@ -3,6 +3,7 @@ package com.example.thelastone.vm
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.thelastone.data.model.User
+import com.example.thelastone.data.repo.FriendRepository
 import com.example.thelastone.data.repo.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -24,7 +25,8 @@ data class SearchUsersUiState(
 
 @HiltViewModel
 class SearchUsersViewModel @Inject constructor(
-    private val repo: UserRepository
+    private val repo: UserRepository,
+    private val Friendrepo: FriendRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(SearchUsersUiState())
@@ -49,7 +51,7 @@ class SearchUsersViewModel @Inject constructor(
         }
         _state.value = _state.value.copy(loading = true, error = null)
         try {
-            val list = repo.searchUsers(q)
+            val list = Friendrepo.searchUsers(q)
             _state.value = _state.value.copy(loading = false, results = list)
         } catch (e: Exception) {
             _state.value = _state.value.copy(loading = false, error = e.message ?: "Search failed")
