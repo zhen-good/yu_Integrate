@@ -18,7 +18,9 @@ import java.util.Locale
 import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
 import com.example.thelastone.data.remote.ChatService  // 🆕 添加這個 import
-
+import com.example.thelastone.data.remote.FriendApi
+import com.example.thelastone.data.repo.FriendRepository
+import com.example.thelastone.data.repo.impl.FriendRepositoryImpl
 
 
 @Module
@@ -97,4 +99,21 @@ object AppModule {
     fun provideChatService(retrofit: Retrofit): ChatService {
         return retrofit.create(ChatService::class.java)
     }
+
+    // ← 提供 FriendApi
+    @Provides
+    @Singleton
+    fun provideFriendApi(retrofit: Retrofit): FriendApi {
+        return retrofit.create(FriendApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideFriendRepository(
+        api: FriendApi  // ← 如果需要 API 的話
+    ): FriendRepository {
+        return FriendRepositoryImpl(api)
+    }
+
+
 }

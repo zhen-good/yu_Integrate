@@ -27,6 +27,7 @@ fun FriendsScreen(padding: PaddingValues, vm: FriendsViewModel = hiltViewModel()
 
     // ★ Dialog 狀態（兩種身分分開記）
     var previewIncoming by remember { mutableStateOf<IncomingItem?>(null) }
+    //暫存「使用者點擊的是哪個朋友」
     var previewFriend by remember { mutableStateOf<User?>(null) }
 
     Column(

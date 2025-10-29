@@ -10,6 +10,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+
+//告訴 Hilt（Google 的依賴注入框架）這個類是一個 ViewModel
 @HiltViewModel
 class FriendStatsViewModel @Inject constructor(
     private val tripRepo: TripRepository

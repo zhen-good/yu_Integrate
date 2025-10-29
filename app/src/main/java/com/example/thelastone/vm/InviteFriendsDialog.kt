@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.thelastone.data.model.User
+import com.example.thelastone.data.repo.FriendRepository
 import com.example.thelastone.data.repo.TripRepository
 import com.example.thelastone.data.repo.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,6 +18,7 @@ import javax.inject.Inject
 class InviteFriendsViewModel @Inject constructor(
     private val userRepo: UserRepository,
     private val tripRepo: TripRepository,
+    private val Friendrepo: FriendRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -42,7 +44,7 @@ class InviteFriendsViewModel @Inject constructor(
         viewModelScope.launch {
             _ui.update { it.copy(loading = true, error = null) }
             runCatching {
-                val friends = userRepo.getFriends()
+                val friends = Friendrepo.getFriends(userId = "current_user_id")
                 val trip = tripRepo.getTripDetail(tripId)
                 val memberIds = trip.members.map { it.id }.toSet()
                 friends to memberIds

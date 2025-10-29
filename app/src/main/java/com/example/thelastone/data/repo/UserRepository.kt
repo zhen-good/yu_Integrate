@@ -14,7 +14,10 @@ interface UserRepository {
     suspend fun logout()
 
     // 朋友/搜尋
-    suspend fun getFriends(): List<User>
+//    suspend fun getFriends(): List<User>
+    //先把這個移到friendrepository
+
+
     suspend fun searchUsers(keyword: String): List<User>
     suspend fun sendFriendRequest(toUserId: String)
 

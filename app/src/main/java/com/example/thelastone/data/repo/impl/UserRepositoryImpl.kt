@@ -71,10 +71,10 @@ class UserRepositoryImpl @Inject constructor(
         // 之後實作清除 token 的邏輯
     }
 
-    // ===== 其他方法先保留空實作 =====
-    override suspend fun getFriends(): List<User> {
-        TODO("之後實作")
-    }
+//    // ===== 其他方法先保留空實作 =====
+//    override suspend fun getFriends(): List<User> {
+//        TODO("之後實作")
+//    }
 
     override suspend fun searchUsers(keyword: String): List<User> {
         TODO("之後實作")
@@ -85,7 +85,7 @@ class UserRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getIncomingFriendRequests(): List<FriendRequest> {
-        TODO("之後實作")
+        return emptyList()  // ← 臨時用空列表
     }
 
     override suspend fun acceptFriendRequest(requestId: String) {
